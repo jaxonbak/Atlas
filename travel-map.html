@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>Atlas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,800;1,9..144,400&family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%;overflow:hidden;font-family:'DM Sans',-apple-system,sans-serif}
+:root{
+  --paper:#f3ead8;--paper2:#ebe0c7;--ocean:#b8cdc7;--land:#ede1c4;
+  --ink:#2a2117;--muted:#5b4d3a;--fade:#8a7a62;--rule:#c9b994;
+  --been:#2f6b4e;--want:#c4533a;
+}
+#loading{position:fixed;inset:0;background:var(--paper);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:9999}
+#loading .seal{font-family:'Fraunces',serif;font-weight:800;font-style:italic;font-size:34px;color:var(--ink);letter-spacing:-0.01em}
+.progress-bar{width:140px;height:2px;background:var(--rule);position:relative;overflow:hidden;border-radius:1px}
+.progress-bar::after{content:'';position:absolute;top:0;bottom:0;width:40%;background:var(--ink);animation:sh 1.1s ease-in-out infinite}
+@keyframes sh{0%{left:-40%}100%{left:100%}}
+#load-status{font-family:'Fraunces',serif;font-style:italic;font-size:12px;color:var(--fade);letter-spacing:0.1em;text-transform:uppercase}
+#error-box{display:none;position:fixed;inset:0;background:var(--paper);align-items:center;justify-content:center;padding:24px;z-index:9999}
+.error-card{border:2px solid var(--ink);border-radius:8px;padding:32px 28px;max-width:400px;text-align:center;background:var(--paper);box-shadow:0 4px 24px rgba(42,33,23,.12)}
+.error-card .icon{font-size:40px;margin-bottom:14px}
+.error-card h2{font-family:'Fraunces',serif;font-style:italic;font-size:22px;color:var(--ink);margin:0 0 10px}
+.error-card p{font-size:14px;color:var(--muted);line-height:1.75;margin:0 0 16px}
+.error-card .detail{font-size:12px;color:var(--fade);font-family:monospace;background:var(--paper2);padding:8px 12px;border-radius:4px;word-break:break-all;margin-bottom:20px;text-align:left;white-space:pre-wrap}
+.error-card button{padding:11px 30px;background:var(--ink);color:var(--paper);border:none;border-radius:4px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:13px;cursor:pointer;letter-spacing:0.05em}
+#app{display:none;position:fixed;inset:0}
+#map-svg{display:block;background:var(--ocean);touch-action:none}
+.country,.state{cursor:pointer;transition:opacity .1s}
+.country:hover,.state:hover{opacity:.82}
+.header{position:absolute;top:0;left:0;right:0;z-index:100;padding:14px 18px;pointer-events:none}
+.header>*{pointer-events:auto}
+.masthead{display:flex;align-items:baseline;gap:10px;border-bottom:1.5px solid var(--ink);padding-bottom:6px;margin-bottom:4px}
+.masthead h1{font-family:'Fraunces',serif;font-weight:800;font-style:italic;font-size:28px;letter-spacing:-0.01em;margin:0;line-height:1;color:var(--ink)}
+.vol{margin-left:auto;font-family:'Fraunces',serif;font-style:italic;font-size:11px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase}
+.subhead{font-family:'Fraunces',serif;font-style:italic;font-size:12px;color:var(--muted);margin-bottom:10px}
+.toggle{display:inline-flex;background:var(--paper);border:1.5px solid var(--ink);border-radius:2px;padding:2px;box-shadow:0 2px 10px rgba(42,33,23,.12)}
+.toggle button{border:none;background:transparent;padding:7px 14px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:12px;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);cursor:pointer}
+.toggle button.active{background:var(--ink);color:var(--paper)}
+.stats{position:absolute;top:140px;right:14px;z-index:100;background:var(--paper);border:1.5px solid var(--ink);border-radius:2px;padding:10px 13px;box-shadow:0 2px 10px rgba(42,33,23,.12);min-width:130px}
+.stats .lbl{font-family:'Fraunces',serif;font-style:italic;font-size:10px;color:var(--fade);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;padding-bottom:4px;border-bottom:1px dashed var(--rule)}
+.stat-row{display:flex;align-items:center;gap:8px;padding:3px 0}
+.sw{width:14px;height:14px;border:1.5px solid var(--ink);border-radius:2px;flex-shrink:0}
+.sw.been{background:var(--been)}.sw.want{background:var(--want)}
+.sn{font-family:'Fraunces',serif;font-weight:800;font-size:18px;line-height:1;color:var(--ink)}
+.sw-lbl{font-size:11px;color:var(--muted)}
+#btn-recenter{position:absolute;bottom:24px;left:14px;z-index:100;background:var(--paper);border:1.5px solid var(--ink);border-radius:999px;padding:8px 16px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:12px;letter-spacing:0.04em;color:var(--ink);cursor:pointer;box-shadow:0 2px 10px rgba(42,33,23,.12);display:inline-flex;align-items:center;gap:6px}
+.backdrop{display:none;position:fixed;inset:0;background:rgba(42,33,23,.22);z-index:200}
+.backdrop.open{display:block}
+.sheet{position:fixed;bottom:0;left:0;right:0;z-index:300;background:var(--paper);border-top:2px solid var(--ink);border-radius:18px 18px 0 0;padding:14px 22px 36px;box-shadow:0 -8px 32px rgba(42,33,23,.18);transform:translateY(110%);transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.sheet.open{transform:translateY(0)}
+.handle{width:44px;height:4px;background:var(--rule);border-radius:2px;margin:0 auto 16px}
+.sheet-eye{font-family:'Fraunces',serif;font-style:italic;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--fade);margin:0 0 2px}
+.sheet-name{font-family:'Fraunces',serif;font-weight:800;font-size:26px;letter-spacing:-0.01em;color:var(--ink);margin:0 0 8px;line-height:1.1}
+.sheet-row{font-size:13px;color:var(--muted);margin-bottom:16px;padding-bottom:14px;border-bottom:1px dashed var(--rule);display:flex;align-items:center;gap:8px}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 11px;border-radius:999px;border:1.5px solid;font-weight:600;font-size:11px;letter-spacing:0.05em;text-transform:uppercase}
+.badge.none{background:var(--paper2);color:var(--ink);border-color:var(--ink)}
+.badge.been{background:var(--been);color:var(--paper);border-color:var(--been)}
+.badge.want{background:var(--want);color:var(--paper);border-color:var(--want)}
+.actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.action{border:1.5px solid;border-radius:5px;padding:14px 6px 10px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:12px;letter-spacing:0.05em;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px}
+.action.been{background:var(--been);color:var(--paper);border-color:var(--been)}
+.action.want{background:var(--want);color:var(--paper);border-color:var(--want)}
+.action.clear{background:var(--paper);color:var(--ink);border-color:var(--ink)}
+.action .glyph{font-family:'Fraunces',serif;font-weight:800;font-size:22px;line-height:1}
+/* Search */
+.search-wrap{position:absolute;top:140px;left:14px;z-index:100;width:220px}
+.search-box{display:flex;align-items:center;gap:8px;background:var(--paper);border:1.5px solid var(--ink);border-radius:2px;padding:8px 12px;box-shadow:0 2px 10px rgba(42,33,23,.12)}
+.search-box input{border:none;background:transparent;outline:none;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);width:100%;min-width:0}
+.search-box input::placeholder{color:var(--fade)}
+.search-box .search-icon{font-size:14px;color:var(--fade);flex-shrink:0}
+.search-box .clear-btn{font-size:16px;color:var(--fade);cursor:pointer;flex-shrink:0;line-height:1;background:none;border:none;padding:0}
+.search-results{background:var(--paper);border:1.5px solid var(--ink);border-top:none;border-radius:0 0 4px 4px;box-shadow:0 6px 16px rgba(42,33,23,.13);max-height:220px;overflow-y:auto;display:none}
+.search-results.open{display:block}
+.search-result{padding:9px 12px;font-size:13px;color:var(--ink);cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--rule)}
+.search-result:last-child{border-bottom:none}
+.search-result:hover{background:var(--paper2)}
+.search-result .r-dot{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--ink);flex-shrink:0}
+.search-result .r-dot.been{background:var(--been);border-color:var(--been)}
+.search-result .r-dot.want{background:var(--want);border-color:var(--want)}
+.search-result .r-dot.none{background:var(--land)}
+.search-result .r-name{flex:1;font-weight:500}
+.search-result .r-tag{font-size:10px;color:var(--fade);letter-spacing:0.06em;text-transform:uppercase}
+.search-empty{padding:12px;font-family:'Fraunces',serif;font-style:italic;font-size:13px;color:var(--fade);text-align:center}
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="seal">◆ Atlas ◆</div>
+  <div class="progress-bar"></div>
+  <div id="load-status">Starting…</div>
+</div>
+
+<div id="error-box">
+  <div class="error-card">
+    <div class="icon">⌖</div>
+    <h2>Atlas unavailable</h2>
+    <p id="err-msg">Could not load map data.</p>
+    <div class="detail" id="err-detail"></div>
+    <button onclick="window.location.reload()">Try again</button>
+  </div>
+</div>
+
+<div id="app">
+  <svg id="map-svg"></svg>
+  <div class="header">
+    <div class="masthead">
+      <span style="font-size:17px">⌖</span>
+      <h1>Atlas</h1>
+      <span class="vol" id="vol-text">Vol. I · The World</span>
+    </div>
+    <div class="subhead">A personal record of world adventures</div>
+    <div class="toggle">
+      <button id="btn-world" class="active" onclick="switchView('world')">World</button>
+      <button id="btn-us" onclick="switchView('us')">United States</button>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="lbl">Tally</div>
+    <div class="stat-row"><div class="sw been"></div><div><div class="sn" id="cnt-been">0</div><div class="sw-lbl">visited</div></div></div>
+    <div class="stat-row"><div class="sw want"></div><div><div class="sn" id="cnt-want">0</div><div class="sw-lbl">wishlist</div></div></div>
+  </div>
+  <!-- Search -->
+  <div class="search-wrap" id="search-wrap">
+    <div class="search-box">
+      <span class="search-icon">⌕</span>
+      <input id="search-input" type="text" placeholder="Search countries…" autocomplete="off" spellcheck="false"/>
+      <button class="clear-btn" id="search-clear" style="display:none" onclick="clearSearch()">×</button>
+    </div>
+    <div class="search-results" id="search-results"></div>
+  </div>
+  <button id="btn-recenter" onclick="recenter()">⌖ Recenter</button>
+  <div class="backdrop" id="backdrop" onclick="closeSheet()"></div>
+  <div class="sheet" id="sheet">
+    <div class="handle"></div>
+    <p class="sheet-eye" id="sheet-eye">Country</p>
+    <h2 class="sheet-name" id="sheet-name">—</h2>
+    <div class="sheet-row"><span>Status:</span><span class="badge none" id="sheet-badge">— Unmarked</span></div>
+    <div class="actions">
+      <button class="action been" onclick="markSelected('been')"><span class="glyph">✓</span><span>Been</span></button>
+      <button class="action want" onclick="markSelected('want')"><span class="glyph">★</span><span>Want</span></button>
+      <button class="action clear" onclick="markSelected('none')"><span class="glyph">×</span><span>Clear</span></button>
+    </div>
+  </div>
+</div>
+
+<script>
+const ISO={4:"Afghanistan",8:"Albania",12:"Algeria",20:"Andorra",24:"Angola",32:"Argentina",51:"Armenia",36:"Australia",40:"Austria",31:"Azerbaijan",48:"Bahrain",50:"Bangladesh",56:"Belgium",84:"Belize",204:"Benin",64:"Bhutan",68:"Bolivia",70:"Bosnia and Herzegovina",72:"Botswana",76:"Brazil",96:"Brunei",100:"Bulgaria",104:"Myanmar",108:"Burundi",116:"Cambodia",120:"Cameroon",124:"Canada",132:"Cape Verde",140:"Central African Republic",148:"Chad",152:"Chile",156:"China",170:"Colombia",178:"Republic of Congo",180:"DR Congo",188:"Costa Rica",384:"Ivory Coast",191:"Croatia",192:"Cuba",196:"Cyprus",203:"Czech Republic",208:"Denmark",214:"Dominican Republic",218:"Ecuador",818:"Egypt",222:"El Salvador",226:"Equatorial Guinea",232:"Eritrea",233:"Estonia",231:"Ethiopia",246:"Finland",250:"France",266:"Gabon",270:"Gambia",268:"Georgia",276:"Germany",288:"Ghana",300:"Greece",320:"Guatemala",324:"Guinea",624:"Guinea-Bissau",328:"Guyana",332:"Haiti",340:"Honduras",348:"Hungary",356:"India",360:"Indonesia",364:"Iran",368:"Iraq",372:"Ireland",376:"Israel",380:"Italy",388:"Jamaica",392:"Japan",400:"Jordan",398:"Kazakhstan",404:"Kenya",408:"North Korea",410:"South Korea",414:"Kuwait",417:"Kyrgyzstan",418:"Laos",428:"Latvia",422:"Lebanon",426:"Lesotho",430:"Liberia",434:"Libya",440:"Lithuania",442:"Luxembourg",807:"North Macedonia",450:"Madagascar",454:"Malawi",458:"Malaysia",466:"Mali",478:"Mauritania",484:"Mexico",496:"Mongolia",499:"Montenegro",504:"Morocco",508:"Mozambique",516:"Namibia",524:"Nepal",528:"Netherlands",554:"New Zealand",558:"Nicaragua",562:"Niger",566:"Nigeria",578:"Norway",512:"Oman",586:"Pakistan",591:"Panama",598:"Papua New Guinea",600:"Paraguay",604:"Peru",608:"Philippines",616:"Poland",620:"Portugal",634:"Qatar",642:"Romania",643:"Russia",646:"Rwanda",682:"Saudi Arabia",686:"Senegal",688:"Serbia",694:"Sierra Leone",703:"Slovakia",705:"Slovenia",706:"Somalia",710:"South Africa",724:"Spain",144:"Sri Lanka",729:"Sudan",740:"Suriname",752:"Sweden",756:"Switzerland",760:"Syria",158:"Taiwan",762:"Tajikistan",834:"Tanzania",764:"Thailand",768:"Togo",780:"Trinidad and Tobago",788:"Tunisia",792:"Turkey",795:"Turkmenistan",800:"Uganda",804:"Ukraine",784:"United Arab Emirates",826:"United Kingdom",840:"United States of America",858:"Uruguay",860:"Uzbekistan",862:"Venezuela",704:"Vietnam",887:"Yemen",894:"Zambia",716:"Zimbabwe",10:"Antarctica",90:"Solomon Islands",242:"Fiji",548:"Vanuatu",882:"Samoa",776:"Tonga",626:"East Timor",275:"Palestine",702:"Singapore",352:"Iceland"};
+const FIPS={"01":"Alabama","02":"Alaska","04":"Arizona","05":"Arkansas","06":"California","08":"Colorado","09":"Connecticut","10":"Delaware","12":"Florida","13":"Georgia","15":"Hawaii","16":"Idaho","17":"Illinois","18":"Indiana","19":"Iowa","20":"Kansas","21":"Kentucky","22":"Louisiana","23":"Maine","24":"Maryland","25":"Massachusetts","26":"Michigan","27":"Minnesota","28":"Mississippi","29":"Missouri","30":"Montana","31":"Nebraska","32":"Nevada","33":"New Hampshire","34":"New Jersey","35":"New Mexico","36":"New York","37":"North Carolina","38":"North Dakota","39":"Ohio","40":"Oklahoma","41":"Oregon","42":"Pennsylvania","44":"Rhode Island","45":"South Carolina","46":"South Dakota","47":"Tennessee","48":"Texas","49":"Utah","50":"Vermont","51":"Virginia","53":"Washington","54":"West Virginia","55":"Wisconsin","56":"Wyoming"};
+const FILL={none:'#ede1c4',been:'#2f6b4e',want:'#c4533a'};
+
+let worldStatus={}, usStatus={}, worldGeo, usGeo;
+let currentView='world', selName=null, selKind=null, zoomB;
+
+function setMsg(m){document.getElementById('load-status').textContent=m}
+
+function showError(msg,detail){
+  document.getElementById('loading').style.display='none';
+  const b=document.getElementById('error-box'); b.style.display='flex';
+  document.getElementById('err-msg').textContent=msg;
+  const d=document.getElementById('err-detail');
+  if(detail){d.textContent=detail;d.style.display='block';}else{d.style.display='none';}
+}
+
+function loadScript(src){
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src=src; s.onload=res;
+    s.onerror=()=>rej(new Error('Script load failed: '+src));
+    document.head.appendChild(s);
+  });
+}
+
+// Timeout: if loading takes >8s, show a clear error
+setTimeout(()=>{
+  if(document.getElementById('loading').style.display!=='none'&&
+     document.getElementById('loading').style.display!==''){return;}
+  if(document.getElementById('loading').style.display===''||
+     document.getElementById('loading').style.display==='flex'||
+     !document.getElementById('loading').style.display){
+    // Still loading after 8s
+    document.getElementById('loading').style.display='none';
+    const eb=document.getElementById('error-box'); eb.style.display='flex';
+    document.getElementById('err-msg').textContent='This map requires an internet connection to load its mapping libraries.';
+    document.getElementById('err-detail').textContent='Open this file in Safari or Chrome while connected to Wi-Fi or mobile data. The map data is loaded from external servers (jsDelivr CDN) and cannot work fully offline.';
+    document.getElementById('err-detail').style.display='block';
+  }
+},8000);
+
+async function init(){
+  // Storage
+  setMsg('Restoring saved data…');
+  try{const r=localStorage.getItem('atlas_world');if(r)worldStatus=JSON.parse(r);}catch{}
+  try{const r=localStorage.getItem('atlas_us');if(r)usStatus=JSON.parse(r);}catch{}
+
+  // D3
+  setMsg('Loading D3…');
+  let d3loaded=false;
+  for(const src of['https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js','https://unpkg.com/d3@7/dist/d3.min.js']){
+    try{await loadScript(src);if(window.d3){d3loaded=true;break;}}catch{}
+  }
+  if(!d3loaded){showError('Could not load the D3 mapping library.','Tried cdn.jsdelivr.net and unpkg.com — both failed. The artifact sandbox may be blocking external scripts.');return;}
+
+  // TopoJSON
+  setMsg('Loading TopoJSON…');
+  let tjloaded=false;
+  for(const src of['https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js','https://unpkg.com/topojson-client@3/dist/topojson-client.min.js']){
+    try{await loadScript(src);if(window.topojson){tjloaded=true;break;}}catch{}
+  }
+  if(!tjloaded){showError('Could not load the TopoJSON library.','Tried cdn.jsdelivr.net and unpkg.com — both failed.');return;}
+
+  // World data
+  setMsg('Downloading world map…');
+  let worldTopo;
+  try{
+    const r=await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json');
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    worldTopo=await r.json();
+  }catch(e){showError('Could not download world map data.',e.message+'\nURL: cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json');return;}
+
+  // US data
+  setMsg('Downloading US map…');
+  let usTopo;
+  try{
+    const r=await fetch('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json');
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    usTopo=await r.json();
+  }catch(e){showError('Could not download US map data.',e.message+'\nURL: cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json');return;}
+
+  // Convert
+  setMsg('Rendering map…');
+  try{
+    worldGeo=topojson.feature(worldTopo,worldTopo.objects.countries);
+    usGeo   =topojson.feature(usTopo,   usTopo.objects.states);
+  }catch(e){showError('Failed to parse map topology.',e.message);return;}
+
+  // Show app
+  document.getElementById('loading').style.display='none';
+  document.getElementById('app').style.display='block';
+  setupMap();
+  renderWorld();
+  updateStats();
+}
+
+function setupMap(){
+  const svg=d3.select('#map-svg')
+    .attr('width',window.innerWidth)
+    .attr('height',window.innerHeight);
+  zoomB=d3.zoom().scaleExtent([0.5,10])
+    .on('zoom',e=>svg.select('g').attr('transform',e.transform));
+  svg.call(zoomB).on('click',closeSheet);
+  svg.append('g').attr('id','map-g');
+  window.addEventListener('resize',()=>{
+    svg.attr('width',window.innerWidth).attr('height',window.innerHeight);
+    if(currentView==='world')renderWorld(false);else renderUS(false);
+  });
+}
+
+function proj(view){
+  const w=window.innerWidth,h=window.innerHeight;
+  return view==='world'
+    ?d3.geoNaturalEarth1().scale(Math.min(w/6.5,165)).translate([w/2,h/2])
+    :d3.geoAlbersUsa().scale(Math.min(w*1.1,1200)).translate([w/2,h/2]);
+}
+
+function renderWorld(rst=true){
+  if(rst)d3.select('#map-svg').call(zoomB.transform,d3.zoomIdentity);
+  const p=d3.geoPath().projection(proj('world'));
+  const g=d3.select('#map-g'); g.selectAll('*').remove();
+  // Graticule
+  g.append('path').datum(d3.geoGraticule()()).attr('d',p)
+    .attr('fill','none').attr('stroke','#9bb6b0').attr('stroke-width',0.3);
+  // Countries
+  g.selectAll('.country').data(worldGeo.features).join('path')
+    .attr('class','country')
+    .attr('d',d=>p(d)||'')
+    .attr('fill',d=>FILL[worldStatus[ISO[+d.id]||'?']||'none'])
+    .attr('stroke','#5b4d3a').attr('stroke-width',0.45)
+    .attr('data-name',d=>ISO[+d.id]||`Region ${d.id}`)
+    .on('click',function(e,d){
+      e.stopPropagation();
+      const name=ISO[+d.id]||`Region ${d.id}`;
+      g.selectAll('.country').attr('stroke','#5b4d3a').attr('stroke-width',0.45);
+      d3.select(this).attr('stroke','#2a2117').attr('stroke-width',1.8).raise();
+      openSheet(name,'world');
+    });
+}
+
+function renderUS(rst=true){
+  if(rst)d3.select('#map-svg').call(zoomB.transform,d3.zoomIdentity);
+  const p=d3.geoPath().projection(proj('us'));
+  const g=d3.select('#map-g'); g.selectAll('*').remove();
+  g.selectAll('.state').data(usGeo.features).join('path')
+    .attr('class','state')
+    .attr('d',d=>p(d)||'')
+    .attr('fill',d=>FILL[usStatus[FIPS[String(d.id).padStart(2,'0')]||'?']||'none'])
+    .attr('stroke','#5b4d3a').attr('stroke-width',0.8)
+    .attr('data-name',d=>FIPS[String(d.id).padStart(2,'0')]||`State ${d.id}`)
+    .on('click',function(e,d){
+      e.stopPropagation();
+      const name=FIPS[String(d.id).padStart(2,'0')]||`State ${d.id}`;
+      g.selectAll('.state').attr('stroke','#5b4d3a').attr('stroke-width',0.8);
+      d3.select(this).attr('stroke','#2a2117').attr('stroke-width',2.2).raise();
+      openSheet(name,'us');
+    });
+}
+
+function switchView(v){
+  if(v===currentView)return;
+  currentView=v; closeSheet(); selName=null; selKind=null;
+  document.getElementById('btn-world').classList.toggle('active',v==='world');
+  document.getElementById('btn-us').classList.toggle('active',v==='us');
+  document.getElementById('vol-text').textContent=v==='world'?'Vol. I · The World':'Vol. II · United States';
+  if(v==='world')renderWorld();else renderUS();
+  updateStats();
+  updateSearchPlaceholder();
+}
+
+function recenter(){
+  d3.select('#map-svg').transition().duration(400).call(zoomB.transform,d3.zoomIdentity);
+}
+
+function openSheet(name,kind){
+  selName=name; selKind=kind;
+  const st=(kind==='world'?worldStatus[name]:usStatus[name])||'none';
+  document.getElementById('sheet-eye').textContent=kind==='us'?'US State':'Country';
+  document.getElementById('sheet-name').textContent=name;
+  const b=document.getElementById('sheet-badge');
+  b.className='badge '+st;
+  b.textContent=st==='been'?'✓  Visited':st==='want'?'★  Wishlist':'—  Unmarked';
+  document.getElementById('sheet').classList.add('open');
+  document.getElementById('backdrop').classList.add('open');
+}
+
+function resetHighlight(){
+  // Reset stroke on all paths back to default for current view
+  if(currentView==='world'){
+    d3.select('#map-g').selectAll('.country').attr('stroke','#5b4d3a').attr('stroke-width',0.45);
+  } else {
+    d3.select('#map-g').selectAll('.state').attr('stroke','#5b4d3a').attr('stroke-width',0.8);
+  }
+  selName=null; selKind=null;
+}
+
+function closeSheet(){
+  document.getElementById('sheet').classList.remove('open');
+  document.getElementById('backdrop').classList.remove('open');
+  resetHighlight();
+  hideSearch();
+}
+
+async function markSelected(ns){
+  if(!selName)return;
+  if(selKind==='world'){
+    if(ns==='none')delete worldStatus[selName];else worldStatus[selName]=ns;
+    try{localStorage.setItem('atlas_world',JSON.stringify(worldStatus));}catch{}
+  }else{
+    if(ns==='none')delete usStatus[selName];else usStatus[selName]=ns;
+    try{localStorage.setItem('atlas_us',JSON.stringify(usStatus));}catch{}
+  }
+  // Update fill without full re-render
+  d3.select('#map-g').selectAll('.country,.state')
+    .filter(function(){return d3.select(this).attr('data-name')===selName;})
+    .attr('fill',FILL[ns]||FILL.none);
+  const b=document.getElementById('sheet-badge');
+  b.className='badge '+ns;
+  b.textContent=ns==='been'?'✓  Visited':ns==='want'?'★  Wishlist':'—  Unmarked';
+  updateStats();
+  setTimeout(closeSheet,130);
+}
+
+function updateStats(){
+  const s=currentView==='world'?worldStatus:usStatus;
+  document.getElementById('cnt-been').textContent=Object.values(s).filter(v=>v==='been').length;
+  document.getElementById('cnt-want').textContent=Object.values(s).filter(v=>v==='want').length;
+}
+
+/* ─── SEARCH ─── */
+function allNames(){
+  if(currentView==='world') return Object.values(ISO).filter(Boolean).sort();
+  return Object.values(FIPS).filter(Boolean).sort();
+}
+
+function getStatus(name){
+  return (currentView==='world' ? worldStatus[name] : usStatus[name]) || 'none';
+}
+
+function hideSearch(){
+  document.getElementById('search-results').classList.remove('open');
+}
+
+function clearSearch(){
+  document.getElementById('search-input').value='';
+  document.getElementById('search-clear').style.display='none';
+  hideSearch();
+  document.getElementById('search-input').focus();
+}
+
+function buildResults(q){
+  const res=document.getElementById('search-results');
+  if(!q){res.classList.remove('open');return;}
+  const ql=q.toLowerCase();
+  const hits=allNames().filter(n=>n.toLowerCase().includes(ql)).slice(0,8);
+  if(hits.length===0){
+    res.innerHTML='<div class="search-empty">No results</div>';
+  } else {
+    res.innerHTML=hits.map(name=>{
+      const st=getStatus(name);
+      const tag=st==='been'?'Visited':st==='want'?'Wishlist':'';
+      return `<div class="search-result" onclick="selectFromSearch('${name.replace(/'/g,"\'")}')">
+        <div class="r-dot ${st}"></div>
+        <span class="r-name">${name}</span>
+        ${tag?`<span class="r-tag">${tag}</span>`:''}
+      </div>`;
+    }).join('');
+  }
+  res.classList.add('open');
+}
+
+function selectFromSearch(name){
+  hideSearch();
+  document.getElementById('search-input').value='';
+  document.getElementById('search-clear').style.display='none';
+  // Highlight on map
+  resetHighlight();
+  if(currentView==='world'){
+    d3.select('#map-g').selectAll('.country')
+      .filter(function(){return d3.select(this).attr('data-name')===name;})
+      .attr('stroke','#2a2117').attr('stroke-width',1.8).raise();
+  } else {
+    d3.select('#map-g').selectAll('.state')
+      .filter(function(){return d3.select(this).attr('data-name')===name;})
+      .attr('stroke','#2a2117').attr('stroke-width',2.2).raise();
+  }
+  openSheet(name, currentView);
+}
+
+document.getElementById('search-input').addEventListener('input', function(){
+  const v=this.value.trim();
+  document.getElementById('search-clear').style.display=v?'block':'none';
+  buildResults(v);
+});
+document.getElementById('search-input').addEventListener('keydown', function(e){
+  if(e.key==='Escape'){clearSearch();}
+});
+// Update placeholder when view changes
+function updateSearchPlaceholder(){
+  document.getElementById('search-input').placeholder=
+    currentView==='world'?'Search countries…':'Search states…';
+}
+
+// Close search on outside click
+document.addEventListener('click', function(e){
+  const wrap=document.getElementById('search-wrap');
+  if(!wrap.contains(e.target)) hideSearch();
+});
+
+init();
+</script>
+</body>
+</html>
