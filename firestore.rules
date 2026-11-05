@@ -1,0 +1,15 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Atlas: only Jaxon's Google account can read or write, and only its own doc.
+    match /users/{uid} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == uid
+        && request.auth.token.email == 'jaxonbak@gmail.com'
+        && request.auth.token.email_verified == true;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

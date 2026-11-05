@@ -4,6 +4,10 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <title>Atlas</title>
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png"/>
+<link rel="icon" type="image/png" href="apple-touch-icon.png"/>
+<meta name="apple-mobile-web-app-title" content="Atlas"/>
+<meta name="theme-color" content="#f3ead8"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,800;1,9..144,400&family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet"/>
@@ -42,6 +46,13 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;font-family:'DM Sans',-
 .toggle button{border:none;background:transparent;padding:7px 14px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:12px;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);cursor:pointer}
 .toggle button.active{background:var(--ink);color:var(--paper)}
 .stats{position:absolute;top:140px;right:14px;z-index:100;background:var(--paper);border:1.5px solid var(--ink);border-radius:2px;padding:10px 13px;box-shadow:0 2px 10px rgba(42,33,23,.12);min-width:130px}
+.sync{margin-top:8px;padding-top:7px;border-top:1px dashed var(--rule);display:flex;flex-direction:column;gap:5px}
+.sync .st{font-size:10.5px;color:var(--fade);display:flex;align-items:center;gap:5px}
+.sync .dot{width:6px;height:6px;border-radius:50%;background:var(--fade);flex:none}
+.sync .dot.ok{background:var(--been)}.sync .dot.err{background:var(--want)}
+.sync button{border:1.5px solid var(--ink);background:var(--paper);color:var(--ink);font-family:'DM Sans',sans-serif;font-weight:700;font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;padding:5px 8px;border-radius:2px;cursor:pointer}
+.sync button.primary{background:var(--ink);color:var(--paper)}
+.sync button.link{border:none;background:none;padding:0;text-align:left;font-weight:600;color:var(--muted);text-decoration:underline;text-transform:none;letter-spacing:0}
 .stats .lbl{font-family:'Fraunces',serif;font-style:italic;font-size:10px;color:var(--fade);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;padding-bottom:4px;border-bottom:1px dashed var(--rule)}
 .stat-row{display:flex;align-items:center;gap:8px;padding:3px 0}
 .sw{width:14px;height:14px;border:1.5px solid var(--ink);border-radius:2px;flex-shrink:0}
@@ -124,6 +135,7 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;font-family:'DM Sans',-
     <div class="lbl">Tally</div>
     <div class="stat-row"><div class="sw been"></div><div><div class="sn" id="cnt-been">0</div><div class="sw-lbl">visited</div></div></div>
     <div class="stat-row"><div class="sw want"></div><div><div class="sn" id="cnt-want">0</div><div class="sw-lbl">wishlist</div></div></div>
+    <div class="sync" id="sync"></div>
   </div>
   <!-- Search -->
   <div class="search-wrap" id="search-wrap">
@@ -354,15 +366,50 @@ function closeSheet(){
   hideSearch();
 }
 
+/* ─── CLOUD SYNC ─── */
+function saveLocal(){
+  try{localStorage.setItem('atlas_world',JSON.stringify(worldStatus));}catch{}
+  try{localStorage.setItem('atlas_us',JSON.stringify(usStatus));}catch{}
+}
+function saveAll(){
+  saveLocal();
+  if(window.AT)window.AT.push({world:worldStatus,us:usStatus});
+}
+window.getLocalAtlas=function(){return {world:worldStatus,us:usStatus};};
+window.onCloudState=function(data){
+  worldStatus=data.world||{}; usStatus=data.us||{};
+  saveLocal();
+  if(!window.d3||!document.getElementById('map-g'))return;
+  d3.select('#map-g').selectAll('.country').attr('fill',function(){return FILL[worldStatus[this.getAttribute('data-name')]||'none'];});
+  d3.select('#map-g').selectAll('.state').attr('fill',function(){return FILL[usStatus[this.getAttribute('data-name')]||'none'];});
+  if(selName){
+    const st=(selKind==='world'?worldStatus[selName]:usStatus[selName])||'none';
+    const b=document.getElementById('sheet-badge');
+    b.className='badge '+st;
+    b.textContent=st==='been'?'✓  Visited':st==='want'?'★  Wishlist':'—  Unmarked';
+  }
+  updateStats();
+};
+window.onCloudStatus=renderSync;
+function renderSync(){
+  const el=document.getElementById('sync'); if(!el)return;
+  const a=window.AT;
+  if(!a){el.innerHTML='<div class="st"><span class="dot"></span>Saved on this device</div>';return;}
+  if(!a.user){el.innerHTML='<div class="st"><span class="dot"></span>This device only</div><button class="primary" onclick="AT.signIn()">Sign in to sync</button>';return;}
+  if(!a.isOwner){el.innerHTML='<div class="st"><span class="dot err"></span>Not your account</div><button class="link" onclick="AT.signOut()">Sign out</button>';return;}
+  const m={connecting:['','Connecting…'],saving:['','Saving…'],synced:['ok','Synced'],error:['err','Sync error']}[a.status]||['','…'];
+  el.innerHTML='<div class="st" title="'+(a.lastError||'')+'"><span class="dot '+m[0]+'"></span>'+m[1]+'</div><button class="link" onclick="AT.signOut()">Sign out</button>';
+}
+renderSync();
+
 async function markSelected(ns){
   if(!selName)return;
   if(selKind==='world'){
     if(ns==='none')delete worldStatus[selName];else worldStatus[selName]=ns;
-    try{localStorage.setItem('atlas_world',JSON.stringify(worldStatus));}catch{}
   }else{
     if(ns==='none')delete usStatus[selName];else usStatus[selName]=ns;
-    try{localStorage.setItem('atlas_us',JSON.stringify(usStatus));}catch{}
   }
+  saveAll();
   // Update fill without full re-render
   d3.select('#map-g').selectAll('.country,.state')
     .filter(function(){return d3.select(this).attr('data-name')===selName;})
@@ -462,5 +509,17 @@ document.addEventListener('click', function(e){
 
 init();
 </script>
+<script>
+// Firebase web config (public by design; Firestore rules are the real guard)
+window.__ATLAS_CONFIG__ = {
+  apiKey: "AIzaSyBevAqfpfQ6hVX1n5vfQakDMlC2V6gJ0u0",
+  authDomain: "atlas-c25db.firebaseapp.com",
+  projectId: "atlas-c25db",
+  storageBucket: "atlas-c25db.firebasestorage.app",
+  messagingSenderId: "128068894239",
+  appId: "1:128068894239:web:a4ad632d3b838db8541f2a"
+};
+</script>
+<script type="module" src="firebase-sync.js"></script>
 </body>
 </html>
