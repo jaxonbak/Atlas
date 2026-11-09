@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
 <title>Atlas</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png"/>
 <link rel="icon" type="image/png" href="apple-touch-icon.png"/>
@@ -97,6 +97,56 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;font-family:'DM Sans',-
 .search-result .r-name{flex:1;font-weight:500}
 .search-result .r-tag{font-size:10px;color:var(--fade);letter-spacing:0.06em;text-transform:uppercase}
 .search-empty{padding:12px;font-family:'Fraunces',serif;font-style:italic;font-size:13px;color:var(--fade);text-align:center}
+
+/* Tally rows open the lists */
+.stat-row.tap{cursor:pointer;border-radius:2px}
+.stat-row.tap:active{background:var(--paper2)}
+.stat-row .chev{margin-left:auto;padding-left:8px;font-size:16px;color:var(--fade);line-height:1}
+/* Places list panel (Visited / Wishlist) */
+.lp{position:fixed;bottom:0;left:0;right:0;z-index:300;background:var(--paper);border-top:2px solid var(--ink);border-radius:18px 18px 0 0;padding:12px 18px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -8px 32px rgba(42,33,23,.18);transform:translateY(110%);transition:transform .3s cubic-bezier(.2,.8,.2,1);max-height:62vh;display:flex;flex-direction:column}
+.lp.open{transform:translateY(0)}
+.lp-head{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.lp-tabs{display:inline-flex;border:1.5px solid var(--ink);border-radius:2px;padding:2px}
+.lp-tabs button{border:none;background:transparent;padding:6px 12px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:11.5px;letter-spacing:0.05em;text-transform:uppercase;color:var(--muted);cursor:pointer;white-space:nowrap}
+.lp-tabs button.active.been{background:var(--been);color:var(--paper)}
+.lp-tabs button.active.want{background:var(--want);color:var(--paper)}
+.lp-close{margin-left:auto;border:none;background:none;font-size:24px;line-height:1;color:var(--muted);cursor:pointer;padding:2px 6px}
+.lp-sub{font-family:'Fraunces',serif;font-style:italic;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--fade);margin:6px 0 4px}
+.lp-list{overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;min-height:0}
+.lp-item{padding:11px 4px;border-bottom:1px dashed var(--rule);display:flex;align-items:center;gap:10px;font-size:14px;color:var(--ink);cursor:pointer}
+.lp-item:active{background:var(--paper2)}
+.lp-item .r-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.lp-item .r-dot.been{background:var(--been)}.lp-item .r-dot.want{background:var(--want)}
+.lp-empty{padding:18px 4px;font-family:'Fraunces',serif;font-style:italic;font-size:14px;color:var(--fade);line-height:1.5}
+/* Safe areas (notch) */
+.header{padding-left:max(18px,env(safe-area-inset-left));padding-right:max(18px,env(safe-area-inset-right))}
+/* Landscape phones: compact header, small cards, side panels instead of bottom sheets */
+@media (orientation:landscape) and (max-height:520px){
+  .header{display:flex;align-items:center;gap:12px;padding-top:8px;padding-bottom:0;padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right))}
+  .masthead{flex:1;margin:0;padding-bottom:3px}
+  .masthead h1{font-size:21px}
+  .vol{font-size:10px}
+  .subhead{display:none}
+  .toggle button{padding:5px 10px;font-size:11px}
+  .stats{top:52px;right:max(10px,env(safe-area-inset-right));padding:7px 10px;min-width:112px}
+  .stats .lbl{margin-bottom:3px;padding-bottom:3px}
+  .stat-row{padding:2px 0}
+  .sn{font-size:16px}
+  .sync{margin-top:5px;padding-top:5px;gap:4px}
+  .search-wrap{top:52px;left:max(10px,env(safe-area-inset-left));width:190px}
+  .search-box{padding:6px 10px}
+  .search-results{max-height:34vh}
+  #btn-recenter{bottom:10px;left:max(10px,env(safe-area-inset-left));padding:6px 12px}
+  .sheet,.lp{top:0;bottom:0;left:auto;right:0;width:min(280px,44vw);max-height:none;border-radius:0;border-top:none;border-left:2px solid var(--ink);box-shadow:-8px 0 28px rgba(42,33,23,.18);transform:translateX(110%);padding:10px 14px max(10px,env(safe-area-inset-bottom));padding-right:max(14px,env(safe-area-inset-right));overflow-y:auto}
+  .sheet.open,.lp.open{transform:translateX(0)}
+  .handle{display:none}
+  .sheet-name{font-size:21px;margin-bottom:6px}
+  .sheet-row{margin-bottom:10px;padding-bottom:10px}
+  .action{padding:9px 4px 7px}
+  .action .glyph{font-size:18px}
+  .backdrop.open{background:rgba(42,33,23,.08)}
+  .lp-item{padding:9px 4px;font-size:13px}
+}
 </style>
 </head>
 <body>
@@ -133,8 +183,8 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;font-family:'DM Sans',-
   </div>
   <div class="stats">
     <div class="lbl">Tally</div>
-    <div class="stat-row"><div class="sw been"></div><div><div class="sn" id="cnt-been">0</div><div class="sw-lbl">visited</div></div></div>
-    <div class="stat-row"><div class="sw want"></div><div><div class="sn" id="cnt-want">0</div><div class="sw-lbl">wishlist</div></div></div>
+    <div class="stat-row tap" onclick="openList('been')" role="button" tabindex="0"><div class="sw been"></div><div><div class="sn" id="cnt-been">0</div><div class="sw-lbl">visited</div></div><span class="chev">›</span></div>
+    <div class="stat-row tap" onclick="openList('want')" role="button" tabindex="0"><div class="sw want"></div><div><div class="sn" id="cnt-want">0</div><div class="sw-lbl">wishlist</div></div><span class="chev">›</span></div>
     <div class="sync" id="sync"></div>
   </div>
   <!-- Search -->
@@ -148,6 +198,14 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;font-family:'DM Sans',-
   </div>
   <button id="btn-recenter" onclick="recenter()">⌖ Recenter</button>
   <div class="backdrop" id="backdrop" onclick="closeSheet()"></div>
+  <div class="lp" id="list-panel">
+    <div class="lp-head">
+      <div class="lp-tabs" id="lp-tabs"></div>
+      <button class="lp-close" onclick="closeSheet()" aria-label="Close">×</button>
+    </div>
+    <div class="lp-sub" id="lp-sub"></div>
+    <div class="lp-list" id="lp-list"></div>
+  </div>
   <div class="sheet" id="sheet">
     <div class="handle"></div>
     <p class="sheet-eye" id="sheet-eye">Country</p>
@@ -167,6 +225,7 @@ const FIPS={"01":"Alabama","02":"Alaska","04":"Arizona","05":"Arkansas","06":"Ca
 const FILL={none:'#ede1c4',been:'#2f6b4e',want:'#c4533a'};
 
 let worldStatus={}, usStatus={}, worldGeo, usGeo;
+let listTab='been', listOpen=false, lastLayout='';
 let currentView='world', selName=null, selKind=null, zoomB;
 
 function setMsg(m){document.getElementById('load-status').textContent=m}
@@ -259,6 +318,14 @@ async function init(){
   updateStats();
 }
 
+function layoutKey(){return (window.innerWidth>window.innerHeight?'L':'P')+Math.round(window.innerWidth/40);}
+function highlight(name){
+  const sel=currentView==='world'?'.country':'.state', w=currentView==='world'?1.8:2.2;
+  d3.select('#map-g').selectAll(sel)
+    .filter(function(){return d3.select(this).attr('data-name')===name;})
+    .attr('stroke','#2a2117').attr('stroke-width',w).raise();
+}
+
 function setupMap(){
   const svg=d3.select('#map-svg')
     .attr('width',window.innerWidth)
@@ -267,17 +334,24 @@ function setupMap(){
     .on('zoom',e=>svg.select('g').attr('transform',e.transform));
   svg.call(zoomB).on('click',closeSheet);
   svg.append('g').attr('id','map-g');
-  window.addEventListener('resize',()=>{
+  lastLayout=layoutKey();
+  let rt=null;
+  const relayout=()=>{
     svg.attr('width',window.innerWidth).attr('height',window.innerHeight);
-    if(currentView==='world')renderWorld(false);else renderUS(false);
-  });
+    const k=layoutKey(), changed=k!==lastLayout; lastLayout=k;
+    if(currentView==='world')renderWorld(changed);else renderUS(changed);
+    if(selName)highlight(selName);
+  };
+  const schedule=()=>{clearTimeout(rt);rt=setTimeout(relayout,160);};
+  window.addEventListener('resize',schedule);
+  window.addEventListener('orientationchange',()=>setTimeout(schedule,250));
 }
 
 function proj(view){
   const w=window.innerWidth,h=window.innerHeight;
   return view==='world'
-    ?d3.geoNaturalEarth1().scale(Math.min(w/6.5,165)).translate([w/2,h/2])
-    :d3.geoAlbersUsa().scale(Math.min(w*1.1,1200)).translate([w/2,h/2]);
+    ?d3.geoNaturalEarth1().scale(Math.min(w/6.5,h/3.3,165)).translate([w/2,h/2+(h<520?14:0)])
+    :d3.geoAlbersUsa().scale(Math.min(w*1.1,h*1.7,1200)).translate([w/2,h/2+(h<520?14:0)]);
 }
 
 function renderWorld(rst=true){
@@ -324,6 +398,7 @@ function renderUS(rst=true){
 
 function switchView(v){
   if(v===currentView)return;
+  const keepList=listOpen;
   currentView=v; closeSheet(); selName=null; selKind=null;
   document.getElementById('btn-world').classList.toggle('active',v==='world');
   document.getElementById('btn-us').classList.toggle('active',v==='us');
@@ -331,6 +406,7 @@ function switchView(v){
   if(v==='world')renderWorld();else renderUS();
   updateStats();
   updateSearchPlaceholder();
+  if(keepList)openList(listTab);
 }
 
 function recenter(){
@@ -361,9 +437,62 @@ function resetHighlight(){
 
 function closeSheet(){
   document.getElementById('sheet').classList.remove('open');
+  document.getElementById('list-panel').classList.remove('open');
   document.getElementById('backdrop').classList.remove('open');
+  listOpen=false;
   resetHighlight();
   hideSearch();
+}
+
+
+/* ─── VISITED / WISHLIST LISTS ─── */
+function openList(tab){
+  closeSheet(); selName=null; selKind=null;
+  listTab=tab; listOpen=true; renderList();
+  document.getElementById('list-panel').classList.add('open');
+  document.getElementById('backdrop').classList.add('open');
+}
+function namesFor(tab){
+  const s=currentView==='world'?worldStatus:usStatus;
+  return Object.keys(s).filter(n=>s[n]===tab).sort((a,b)=>a.localeCompare(b));
+}
+function renderList(){
+  const been=namesFor('been'), want=namesFor('want');
+  const unit=currentView==='world'?'countries':'states';
+  document.getElementById('lp-tabs').innerHTML=
+    '<button class="been'+(listTab==='been'?' active':'')+'" onclick="openList(\'been\')">Visited · '+been.length+'</button>'+
+    '<button class="want'+(listTab==='want'?' active':'')+'" onclick="openList(\'want\')">Wishlist · '+want.length+'</button>';
+  document.getElementById('lp-sub').textContent=(currentView==='world'?'World':'United States')+' · '+unit;
+  const names=listTab==='been'?been:want;
+  const box=document.getElementById('lp-list');
+  box.innerHTML=names.length
+    ? names.map(n=>'<div class="lp-item" data-name="'+n.replace(/"/g,'&quot;')+'"><span class="r-dot '+listTab+'"></span><span>'+n+'</span></div>').join('')
+    : '<div class="lp-empty">Nothing here yet. Tap a '+(currentView==='world'?'country':'state')+' on the map and mark it '+(listTab==='been'?'Been':'Want')+'.</div>';
+}
+document.getElementById('lp-list').addEventListener('click',function(e){
+  const it=e.target.closest('.lp-item'); if(it)focusPlace(it.dataset.name);
+});
+function zoomToPlace(name){
+  const geo=currentView==='world'?worldGeo:usGeo;
+  const f=geo.features.find(d=>(currentView==='world'?(ISO[+d.id]||'Region '+d.id):(FIPS[String(d.id).padStart(2,'0')]||'State '+d.id))===name);
+  if(!f)return;
+  const w=window.innerWidth,h=window.innerHeight;
+  const b=d3.geoPath().projection(proj(currentView)).bounds(f);
+  const dx=b[1][0]-b[0][0], dy=b[1][1]-b[0][1];
+  if(!(dx>0&&dy>0))return;
+  const k=Math.max(1,Math.min(3.5,0.4/Math.max(dx/w,dy/h)));
+  const land=window.innerWidth>window.innerHeight&&h<520;
+  const side=land?-Math.min(280,w*0.44)/2:0;   // keep it visible beside the side panel
+  const up=land?0:-h*0.1;                      // or above the bottom sheet in portrait
+  const t=d3.zoomIdentity.translate(w/2+side,h/2+up).scale(k).translate(-(b[0][0]+b[1][0])/2,-(b[0][1]+b[1][1])/2);
+  d3.select('#map-svg').transition().duration(550).call(zoomB.transform,t);
+}
+function focusPlace(name){
+  const wasList=listOpen;
+  closeSheet();
+  highlight(name);
+  openSheet(name,currentView);
+  zoomToPlace(name);
 }
 
 /* ─── CLOUD SYNC ─── */
@@ -425,6 +554,7 @@ function updateStats(){
   const s=currentView==='world'?worldStatus:usStatus;
   document.getElementById('cnt-been').textContent=Object.values(s).filter(v=>v==='been').length;
   document.getElementById('cnt-want').textContent=Object.values(s).filter(v=>v==='want').length;
+  if(listOpen)renderList();
 }
 
 /* ─── SEARCH ─── */
@@ -473,18 +603,7 @@ function selectFromSearch(name){
   hideSearch();
   document.getElementById('search-input').value='';
   document.getElementById('search-clear').style.display='none';
-  // Highlight on map
-  resetHighlight();
-  if(currentView==='world'){
-    d3.select('#map-g').selectAll('.country')
-      .filter(function(){return d3.select(this).attr('data-name')===name;})
-      .attr('stroke','#2a2117').attr('stroke-width',1.8).raise();
-  } else {
-    d3.select('#map-g').selectAll('.state')
-      .filter(function(){return d3.select(this).attr('data-name')===name;})
-      .attr('stroke','#2a2117').attr('stroke-width',2.2).raise();
-  }
-  openSheet(name, currentView);
+  focusPlace(name);
 }
 
 document.getElementById('search-input').addEventListener('input', function(){
