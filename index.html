@@ -220,7 +220,7 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;font-family:'DM Sans',-
 </div>
 
 <script>
-const ISO={4:"Afghanistan",8:"Albania",12:"Algeria",20:"Andorra",24:"Angola",32:"Argentina",51:"Armenia",36:"Australia",40:"Austria",31:"Azerbaijan",48:"Bahrain",50:"Bangladesh",56:"Belgium",84:"Belize",204:"Benin",64:"Bhutan",68:"Bolivia",70:"Bosnia and Herzegovina",72:"Botswana",76:"Brazil",96:"Brunei",100:"Bulgaria",104:"Myanmar",108:"Burundi",116:"Cambodia",120:"Cameroon",124:"Canada",132:"Cape Verde",140:"Central African Republic",148:"Chad",152:"Chile",156:"China",170:"Colombia",178:"Republic of Congo",180:"DR Congo",188:"Costa Rica",384:"Ivory Coast",191:"Croatia",192:"Cuba",196:"Cyprus",203:"Czech Republic",208:"Denmark",214:"Dominican Republic",218:"Ecuador",818:"Egypt",222:"El Salvador",226:"Equatorial Guinea",232:"Eritrea",233:"Estonia",231:"Ethiopia",246:"Finland",250:"France",266:"Gabon",270:"Gambia",268:"Georgia",276:"Germany",288:"Ghana",300:"Greece",320:"Guatemala",324:"Guinea",624:"Guinea-Bissau",328:"Guyana",332:"Haiti",340:"Honduras",348:"Hungary",356:"India",360:"Indonesia",364:"Iran",368:"Iraq",372:"Ireland",376:"Israel",380:"Italy",388:"Jamaica",392:"Japan",400:"Jordan",398:"Kazakhstan",404:"Kenya",408:"North Korea",410:"South Korea",414:"Kuwait",417:"Kyrgyzstan",418:"Laos",428:"Latvia",422:"Lebanon",426:"Lesotho",430:"Liberia",434:"Libya",440:"Lithuania",442:"Luxembourg",807:"North Macedonia",450:"Madagascar",454:"Malawi",458:"Malaysia",466:"Mali",478:"Mauritania",484:"Mexico",496:"Mongolia",499:"Montenegro",504:"Morocco",508:"Mozambique",516:"Namibia",524:"Nepal",528:"Netherlands",554:"New Zealand",558:"Nicaragua",562:"Niger",566:"Nigeria",578:"Norway",512:"Oman",586:"Pakistan",591:"Panama",598:"Papua New Guinea",600:"Paraguay",604:"Peru",608:"Philippines",616:"Poland",620:"Portugal",634:"Qatar",642:"Romania",643:"Russia",646:"Rwanda",682:"Saudi Arabia",686:"Senegal",688:"Serbia",694:"Sierra Leone",703:"Slovakia",705:"Slovenia",706:"Somalia",710:"South Africa",724:"Spain",144:"Sri Lanka",729:"Sudan",740:"Suriname",752:"Sweden",756:"Switzerland",760:"Syria",158:"Taiwan",762:"Tajikistan",834:"Tanzania",764:"Thailand",768:"Togo",780:"Trinidad and Tobago",788:"Tunisia",792:"Turkey",795:"Turkmenistan",800:"Uganda",804:"Ukraine",784:"United Arab Emirates",826:"United Kingdom",840:"United States of America",858:"Uruguay",860:"Uzbekistan",862:"Venezuela",704:"Vietnam",887:"Yemen",894:"Zambia",716:"Zimbabwe",10:"Antarctica",90:"Solomon Islands",242:"Fiji",548:"Vanuatu",882:"Samoa",776:"Tonga",626:"East Timor",275:"Palestine",702:"Singapore",352:"Iceland"};
+const ISO={4:"Afghanistan",8:"Albania",12:"Algeria",20:"Andorra",24:"Angola",32:"Argentina",51:"Armenia",36:"Australia",40:"Austria",31:"Azerbaijan",48:"Bahrain",50:"Bangladesh",56:"Belgium",84:"Belize",204:"Benin",64:"Bhutan",68:"Bolivia",70:"Bosnia and Herzegovina",72:"Botswana",76:"Brazil",96:"Brunei",100:"Bulgaria",104:"Myanmar",108:"Burundi",116:"Cambodia",120:"Cameroon",124:"Canada",132:"Cape Verde",140:"Central African Republic",148:"Chad",152:"Chile",156:"China",170:"Colombia",178:"Republic of Congo",180:"DR Congo",188:"Costa Rica",384:"Ivory Coast",191:"Croatia",192:"Cuba",196:"Cyprus",203:"Czech Republic",208:"Denmark",214:"Dominican Republic",218:"Ecuador",818:"Egypt",222:"El Salvador",226:"Equatorial Guinea",232:"Eritrea",233:"Estonia",231:"Ethiopia",246:"Finland",250:"France",266:"Gabon",270:"Gambia",268:"Georgia",276:"Germany",288:"Ghana",300:"Greece",320:"Guatemala",324:"Guinea",624:"Guinea-Bissau",328:"Guyana",332:"Haiti",340:"Honduras",348:"Hungary",356:"India",360:"Indonesia",364:"Iran",368:"Iraq",372:"Ireland",376:"Israel",380:"Italy",388:"Jamaica",392:"Japan",400:"Jordan",398:"Kazakhstan",404:"Kenya",408:"North Korea",410:"South Korea",414:"Kuwait",417:"Kyrgyzstan",418:"Laos",428:"Latvia",422:"Lebanon",426:"Lesotho",430:"Liberia",434:"Libya",440:"Lithuania",442:"Luxembourg",807:"North Macedonia",450:"Madagascar",454:"Malawi",458:"Malaysia",466:"Mali",478:"Mauritania",484:"Mexico",496:"Mongolia",499:"Montenegro",504:"Morocco",508:"Mozambique",516:"Namibia",524:"Nepal",528:"Netherlands",554:"New Zealand",558:"Nicaragua",562:"Niger",566:"Nigeria",578:"Norway",512:"Oman",586:"Pakistan",591:"Panama",598:"Papua New Guinea",600:"Paraguay",604:"Peru",608:"Philippines",616:"Poland",620:"Portugal",634:"Qatar",642:"Romania",643:"Russia",646:"Rwanda",682:"Saudi Arabia",686:"Senegal",688:"Serbia",694:"Sierra Leone",703:"Slovakia",705:"Slovenia",706:"Somalia",710:"South Africa",724:"Spain",144:"Sri Lanka",729:"Sudan",740:"Suriname",752:"Sweden",756:"Switzerland",760:"Syria",158:"Taiwan",762:"Tajikistan",834:"Tanzania",764:"Thailand",768:"Togo",780:"Trinidad and Tobago",788:"Tunisia",792:"Turkey",795:"Turkmenistan",800:"Uganda",804:"Ukraine",784:"United Arab Emirates",826:"United Kingdom",840:"United States of America",858:"Uruguay",860:"Uzbekistan",862:"Venezuela",704:"Vietnam",887:"Yemen",894:"Zambia",716:"Zimbabwe",10:"Antarctica",90:"Solomon Islands",242:"Fiji",548:"Vanuatu",882:"Samoa",776:"Tonga",626:"East Timor",275:"Palestine",702:"Singapore",352:"Iceland",44:"Bahamas",630:"Puerto Rico",254:"French Guiana"};
 const FIPS={"01":"Alabama","02":"Alaska","04":"Arizona","05":"Arkansas","06":"California","08":"Colorado","09":"Connecticut","10":"Delaware","12":"Florida","13":"Georgia","15":"Hawaii","16":"Idaho","17":"Illinois","18":"Indiana","19":"Iowa","20":"Kansas","21":"Kentucky","22":"Louisiana","23":"Maine","24":"Maryland","25":"Massachusetts","26":"Michigan","27":"Minnesota","28":"Mississippi","29":"Missouri","30":"Montana","31":"Nebraska","32":"Nevada","33":"New Hampshire","34":"New Jersey","35":"New Mexico","36":"New York","37":"North Carolina","38":"North Dakota","39":"Ohio","40":"Oklahoma","41":"Oregon","42":"Pennsylvania","44":"Rhode Island","45":"South Carolina","46":"South Dakota","47":"Tennessee","48":"Texas","49":"Utah","50":"Vermont","51":"Virginia","53":"Washington","54":"West Virginia","55":"Wisconsin","56":"Wyoming"};
 const FILL={none:'#ede1c4',been:'#2f6b4e',want:'#c4533a'};
 
@@ -268,6 +268,7 @@ async function init(){
   setMsg('Restoring saved data…');
   try{const r=localStorage.getItem('atlas_world');if(r)worldStatus=JSON.parse(r);}catch{}
   try{const r=localStorage.getItem('atlas_us');if(r)usStatus=JSON.parse(r);}catch{}
+  if(migrateNames(worldStatus))try{localStorage.setItem('atlas_world',JSON.stringify(worldStatus));}catch{}
 
   // D3
   setMsg('Loading D3…');
@@ -308,6 +309,7 @@ async function init(){
   try{
     worldGeo=topojson.feature(worldTopo,worldTopo.objects.countries);
     usGeo   =topojson.feature(usTopo,   usTopo.objects.states);
+    splitFrenchGuiana();
   }catch(e){showError('Failed to parse map topology.',e.message);return;}
 
   // Show app
@@ -324,6 +326,26 @@ function highlight(name){
   d3.select('#map-g').selectAll(sel)
     .filter(function(){return d3.select(this).attr('data-name')===name;})
     .attr('stroke','#2a2117').attr('stroke-width',w).raise();
+}
+
+/* French Guiana ships inside France's shape; give it its own entry */
+function splitFrenchGuiana(){
+  const fr=worldGeo.features.find(f=>+f.id===250);
+  if(!fr||fr.geometry.type!=='MultiPolygon')return;
+  const isGuiana=poly=>{const r=poly[0];return r.reduce((a,c)=>a+c[0],0)/r.length<-30;};
+  const gui=fr.geometry.coordinates.filter(isGuiana);
+  if(!gui.length)return;
+  fr.geometry={type:'MultiPolygon',coordinates:fr.geometry.coordinates.filter(p=>!isGuiana(p))};
+  worldGeo.features.push({type:'Feature',id:'254',properties:{name:'French Guiana'},
+    geometry:gui.length===1?{type:'Polygon',coordinates:gui[0]}:{type:'MultiPolygon',coordinates:gui}});
+}
+
+/* Older saves used placeholder names for these; carry them over */
+function migrateNames(o){
+  const m={'Region 044':'Bahamas','Region 44':'Bahamas','Region 630':'Puerto Rico'};
+  let ch=false;
+  for(const k in m){ if(o[k]){ if(!o[m[k]])o[m[k]]=o[k]; delete o[k]; ch=true; } }
+  return ch;
 }
 
 function setupMap(){
@@ -507,7 +529,9 @@ function saveAll(){
 window.getLocalAtlas=function(){return {world:worldStatus,us:usStatus};};
 window.onCloudState=function(data){
   worldStatus=data.world||{}; usStatus=data.us||{};
+  const migrated=migrateNames(worldStatus);
   saveLocal();
+  if(migrated&&window.AT)window.AT.push({world:worldStatus,us:usStatus});
   if(!window.d3||!document.getElementById('map-g'))return;
   d3.select('#map-g').selectAll('.country').attr('fill',function(){return FILL[worldStatus[this.getAttribute('data-name')]||'none'];});
   d3.select('#map-g').selectAll('.state').attr('fill',function(){return FILL[usStatus[this.getAttribute('data-name')]||'none'];});
